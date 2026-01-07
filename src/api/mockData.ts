@@ -1,12 +1,12 @@
 
-import {
+import type {
     NewsItem,
     JobItem,
     EventItem,
     BusinessItem,
     InfluencerItem,
-    CommunityItem
-} from './types';
+    CommunityItem,
+} from "./types";
 
 export const mockNews: NewsItem[] = [
     {

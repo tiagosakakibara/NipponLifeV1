@@ -26,7 +26,7 @@ import {
     mockBusinesses,
     mockInfluencers,
     mockCommunities
-} from './api/mockData';
+} from './api';
 
 function App() {
     const [searchQuery, setSearchQuery] = useState('');

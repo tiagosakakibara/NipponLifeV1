@@ -1,5 +1,5 @@
 import { Sparkles, TrendingUp, Flame } from 'lucide-react';
-import { NewsItem } from '../api/mockData';
+import { NewsItem } from '../api';
 
 interface HeroSectionProps {
     featuredNews: NewsItem[];

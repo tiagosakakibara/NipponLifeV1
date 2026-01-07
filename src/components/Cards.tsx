@@ -5,8 +5,8 @@ import type {
     EventItem,
     BusinessItem,
     InfluencerItem,
-    CommunityItem
-} from '../api/mockData';
+    CommunityItem,
+} from "../api";
 
 // News Card
 interface NewsCardProps {
