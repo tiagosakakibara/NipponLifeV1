@@ -28,8 +28,8 @@ export function HeroSection({ featuredNews }: HeroSectionProps) {
                 {/* Featured Cards Grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Main Feature */}
-                    <div className="glass-card overflow-hidden hover-lift group cursor-pointer">
-                        <div className="relative aspect-[16/10]">
+                    <div className="glass-card overflow-hidden hover-lift group cursor-pointer h-full">
+                        <div className="relative h-full">
                             <img
                                 src={mainFeature.image}
                                 alt={mainFeature.title}

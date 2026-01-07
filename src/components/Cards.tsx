@@ -17,14 +17,19 @@ interface NewsCardProps {
 export function NewsCard({ item, featured }: NewsCardProps) {
     return (
         <div className={`carousel-item ${featured ? 'w-80 md:w-96' : 'w-72'}`}>
-            <div className="glass-card overflow-hidden hover-lift h-full">
-                <div className="relative">
-                    <img src={item.image} alt={item.title} className="card-image" />
-                    <span className="absolute top-3 left-3 px-3 py-1 rounded-full bg-nippon-red/90 text-white text-xs font-medium">
+            <div className={`glass-card overflow-hidden hover-lift h-full ${featured ? 'md:relative' : ''}`}>
+                <div className={`relative ${featured ? 'md:h-full md:absolute md:inset-0' : ''}`}>
+                    <img
+                        src={item.image}
+                        alt={item.title}
+                        className={featured ? 'w-full h-full object-cover transition-transform duration-500 group-hover:scale-110' : 'card-image'}
+                    />
+                    {featured && <div className="hidden md:block absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />}
+                    <span className={`absolute top-3 left-3 px-3 py-1 rounded-full bg-nippon-red/90 text-white text-xs font-medium ${featured ? 'z-10' : ''}`}>
                         {item.category}
                     </span>
                 </div>
-                <div className="p-4">
+                <div className={`p-4 ${featured ? 'md:absolute md:bottom-0 md:left-0 md:right-0 md:z-10' : ''}`}>
                     <p className="text-white/50 text-xs mb-2">{new Date(item.date).toLocaleDateString('pt-BR')}</p>
                     <h3 className="font-display font-semibold text-white mb-2 line-clamp-2">{item.title}</h3>
                     <p className="text-white/70 text-sm line-clamp-2">{item.summary}</p>
