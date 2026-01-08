@@ -7,48 +7,58 @@ import { AdminPostEdit } from '../pages/AdminPostEdit';
 import { AdminCategories } from '../pages/AdminCategories';
 import { AdminMedia } from '../pages/AdminMedia';
 import { AdminSettings } from '../pages/AdminSettings';
-import { AdminRouteGuard } from './AdminRouteGuard';
+import { AdminLogin } from '../pages/AdminLogin';
+import { AdminGuard } from '../../routes/AdminGuard';
 
 export const adminRoutes: RouteObject = {
     path: '/admin',
-    element: (
-        <AdminRouteGuard>
-            <AdminLayout />
-        </AdminRouteGuard>
-    ),
     children: [
         {
-            index: true,
-            element: <AdminDashboard />,
+            path: 'login',
+            element: <AdminLogin />,
         },
         {
-            path: 'posts',
+            element: <AdminGuard />,
             children: [
                 {
-                    index: true,
-                    element: <AdminPosts />,
+                    element: <AdminLayout />,
+                    children: [
+                        {
+                            index: true,
+                            element: <AdminDashboard />,
+                        },
+                        {
+                            path: 'posts',
+                            children: [
+                                {
+                                    index: true,
+                                    element: <AdminPosts />,
+                                },
+                                {
+                                    path: 'new',
+                                    element: <AdminPostNew />,
+                                },
+                                {
+                                    path: ':id',
+                                    element: <AdminPostEdit />,
+                                },
+                            ]
+                        },
+                        {
+                            path: 'categories',
+                            element: <AdminCategories />,
+                        },
+                        {
+                            path: 'media',
+                            element: <AdminMedia />,
+                        },
+                        {
+                            path: 'settings',
+                            element: <AdminSettings />,
+                        },
+                    ],
                 },
-                {
-                    path: 'new',
-                    element: <AdminPostNew />,
-                },
-                {
-                    path: ':id',
-                    element: <AdminPostEdit />,
-                },
-            ]
-        },
-        {
-            path: 'categories',
-            element: <AdminCategories />,
-        },
-        {
-            path: 'media',
-            element: <AdminMedia />,
-        },
-        {
-            path: 'settings',
-            element: <AdminSettings />,
+            ],
         },
     ],
 };
