@@ -62,11 +62,11 @@ export function AdminPosts() {
                     </thead>
                     <tbody className="divide-y divide-gray-200 text-gray-700">
                         {filteredPosts.map((post) => (
-                            <tr key={post.id} className="group hover:bg-gray-50">
+                            <tr key={post.id} className="group hover:bg-gray-50 cursor-pointer">
                                 <td className="px-4 py-4">
-                                    <div className="font-medium text-[#2271b1] hover:text-[#135e96] cursor-pointer">
+                                    <Link to={`/admin/posts/${post.id}`} className="font-medium text-[#2271b1] hover:text-[#135e96]">
                                         {post.title}
-                                    </div>
+                                    </Link>
                                     <div className="text-[11px] text-gray-400 mt-1 uppercase tracking-tighter opacity-0 group-hover:opacity-100 transition-opacity">
                                         Slug: {post.slug}
                                     </div>

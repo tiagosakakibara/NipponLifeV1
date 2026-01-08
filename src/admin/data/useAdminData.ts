@@ -18,38 +18,28 @@ export function useAdminData() {
     useEffect(() => {
         const isInitialized = localStorage.getItem('nl_admin_initialized');
 
-        // Load or Init Categories
-        let storedCategories = storage.getCategories();
-        if (!isInitialized && storedCategories.length === 0) {
-            console.log('[SEED] Initializing Categories...');
-            storage.saveCategories(INITIAL_CATEGORIES);
-            storedCategories = INITIAL_CATEGORIES;
-        }
-        setCategories(storedCategories);
-
-        // Load or Init Posts
-        let storedPosts = storage.getPosts();
-        if (!isInitialized && storedPosts.length === 0) {
-            console.log('[SEED] Initializing Posts...');
-            storage.savePosts(INITIAL_POSTS);
-            storedPosts = INITIAL_POSTS;
-        }
-        setPosts(storedPosts);
-
         if (!isInitialized) {
-            localStorage.setItem('nl_admin_initialized', 'true');
-        }
-
-        // Load Settings
-        const storedSettings = storage.getSettings();
-        if (storedSettings) {
-            setSettingsState(storedSettings);
-        } else {
+            console.log('[SEED] Performing first-time initialization...');
+            // Seed and save initial data
+            storage.saveCategories(INITIAL_CATEGORIES);
+            storage.savePosts(INITIAL_POSTS);
             storage.saveSettings(DEFAULT_SETTINGS);
-        }
 
-        // Load Media
-        setMedia(storage.getMedia());
+            // Set state with initial data
+            setCategories(INITIAL_CATEGORIES);
+            setPosts(INITIAL_POSTS);
+            setSettingsState(DEFAULT_SETTINGS);
+            setMedia([]); // No initial media
+
+            // Set flag to prevent re-initialization
+            localStorage.setItem('nl_admin_initialized', 'true');
+        } else {
+            // Load existing data from storage
+            setCategories(storage.getCategories());
+            setPosts(storage.getPosts());
+            setSettingsState(storage.getSettings() || DEFAULT_SETTINGS);
+            setMedia(storage.getMedia());
+        }
     }, []);
 
     // Category Actions
