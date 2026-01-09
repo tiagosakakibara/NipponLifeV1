@@ -5,7 +5,6 @@ import { Session } from '@supabase/supabase-js';
 interface AuthContextType {
     session: Session | null;
     userId: string | null;
-    role: string | null;
     loading: boolean;
     refresh: () => Promise<void>;
 }
@@ -14,45 +13,13 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [session, setSession] = useState<Session | null>(null);
-    const [role, setRole] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
-
-    const fetchRole = async (uid: string) => {
-        try {
-            console.log('Fetching role for user:', uid);
-            // Check if user is in admins table
-            const { data, error } = await supabase
-                .from('admins')
-                .select('user_id')
-                .eq('user_id', uid)
-                .single();
-
-            if (error) {
-                // If error (likely row not found), not admin
-                console.warn('Error fetching admin role:', error.message);
-                setRole(null);
-            } else if (data) {
-                console.log('User is admin:', uid);
-                setRole('admin');
-            } else {
-                setRole(null);
-            }
-        } catch (err) {
-            console.error('Unexpected error fetching role:', err);
-            setRole(null);
-        }
-    };
 
     const refresh = async () => {
         try {
             setLoading(true);
             const { data: { session: currentSession } } = await supabase.auth.getSession();
             setSession(currentSession);
-            if (currentSession?.user) {
-                await fetchRole(currentSession.user.id);
-            } else {
-                setRole(null);
-            }
         } catch (error) {
             console.error('Error refreshing session:', error);
         } finally {
@@ -69,11 +36,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setLoading(true);
             try {
                 setSession(currentSession);
-                if (currentSession?.user) {
-                    await fetchRole(currentSession.user.id);
-                } else {
-                    setRole(null);
-                }
             } finally {
                 setLoading(false);
             }
@@ -85,7 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, []);
 
     return (
-        <AuthContext.Provider value={{ session, userId: session?.user?.id || null, role, loading, refresh }}>
+        <AuthContext.Provider value={{ session, userId: session?.user?.id || null, loading, refresh }}>
             {children}
         </AuthContext.Provider>
     );
