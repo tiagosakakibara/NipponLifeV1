@@ -4,7 +4,7 @@ import { useAdminData } from '../data/useAdminData';
 import { Trash2, Edit } from 'lucide-react';
 
 export function AdminPosts() {
-    const { posts, deletePost } = useAdminData();
+    const { posts, deletePost, loading } = useAdminData();
     const [filterStatus, setFilterStatus] = useState('all');
 
     const filteredPosts = posts.filter(p => {
@@ -17,6 +17,10 @@ export function AdminPosts() {
             deletePost(id);
         }
     };
+
+    if (loading) {
+        return <div className="p-8">Loading posts...</div>;
+    }
 
     return (
         <div>

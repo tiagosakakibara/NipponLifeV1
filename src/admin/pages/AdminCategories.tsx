@@ -4,26 +4,24 @@ import { AdminCategory } from '../data/types';
 import { Trash2, Edit } from 'lucide-react';
 
 export function AdminCategories() {
-    const { categories, addCategory, updateCategory, deleteCategory } = useAdminData();
+    const { categories, addCategory, updateCategory, deleteCategory, loading } = useAdminData();
     const [editingCategory, setEditingCategory] = useState<AdminCategory | null>(null);
     const [formData, setFormData] = useState({
         key: '',
-        label: '',
-        sort_order: 0,
-        is_active: true
+        label: ''
     });
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!formData.key || !formData.label) return;
 
         if (editingCategory) {
-            updateCategory(editingCategory.key, formData);
+            await updateCategory(editingCategory.key, formData);
             setEditingCategory(null);
         } else {
-            addCategory(formData);
+            await addCategory(formData);
         }
-        setFormData({ key: '', label: '', sort_order: 0, is_active: true });
+        setFormData({ key: '', label: '' });
     };
 
     const handleEdit = (cat: AdminCategory) => {
@@ -36,6 +34,10 @@ export function AdminCategories() {
             deleteCategory(key);
         }
     };
+
+    if (loading) {
+        return <div className="p-8">Loading categories...</div>;
+    }
 
     return (
         <div>
@@ -68,25 +70,7 @@ export function AdminCategories() {
                                     required
                                 />
                             </div>
-                            <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Sort Order</label>
-                                <input
-                                    type="number"
-                                    value={formData.sort_order}
-                                    onChange={e => setFormData({ ...formData, sort_order: parseInt(e.target.value) || 0 })}
-                                    className="w-full bg-white text-zinc-900 border border-zinc-300 p-2 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                />
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <input
-                                    type="checkbox"
-                                    id="is_active"
-                                    checked={formData.is_active}
-                                    onChange={e => setFormData({ ...formData, is_active: e.target.checked })}
-                                    className="rounded border-zinc-300 text-blue-500 focus:ring-blue-500"
-                                />
-                                <label htmlFor="is_active" className="text-sm text-gray-700">Is Active</label>
-                            </div>
+
                             <div className="flex gap-2">
                                 <button type="submit" className="bg-[#2271b1] text-white px-4 py-2 rounded text-sm hover:bg-[#135e96] transition-colors flex-1 font-medium">
                                     {editingCategory ? 'Update' : 'Add New'}
@@ -96,7 +80,7 @@ export function AdminCategories() {
                                         type="button"
                                         onClick={() => {
                                             setEditingCategory(null);
-                                            setFormData({ key: '', label: '', sort_order: 0, is_active: true });
+                                            setFormData({ key: '', label: '' });
                                         }}
                                         className="bg-gray-100 text-gray-600 px-4 py-2 rounded text-sm hover:bg-gray-200 transition-colors font-medium border border-gray-200"
                                     >
@@ -115,16 +99,14 @@ export function AdminCategories() {
                                 <tr>
                                     <th className="px-4 py-3">Name</th>
                                     <th className="px-4 py-3">Slug</th>
-                                    <th className="px-4 py-3">Order</th>
                                     <th className="px-4 py-3 text-right">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-200">
-                                {categories.sort((a, b) => a.sort_order - b.sort_order).map((cat) => (
+                                {categories.map((cat) => (
                                     <tr key={cat.key} className="hover:bg-gray-50">
                                         <td className="px-4 py-3 font-medium text-[#2271b1]">{cat.label}</td>
                                         <td className="px-4 py-3 text-gray-400">{cat.key}</td>
-                                        <td className="px-4 py-3 text-gray-400">{cat.sort_order}</td>
                                         <td className="px-4 py-3 text-right">
                                             <div className="flex justify-end gap-2 text-gray-400">
                                                 <button

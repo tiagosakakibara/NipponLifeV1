@@ -1,5 +1,7 @@
 import { Search, Menu, X, Bell, User } from 'lucide-react';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 interface HeaderProps {
     searchQuery: string;
@@ -8,6 +10,16 @@ interface HeaderProps {
 
 export function Header({ searchQuery, onSearchChange }: HeaderProps) {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const navigate = useNavigate();
+    const { session } = useAuth();
+
+    const handleUserClick = () => {
+        if (session) {
+            navigate('/admin');
+        } else {
+            navigate('/admin/login');
+        }
+    };
 
     return (
         <header className="sticky top-0 z-50 glass-card-dark border-b border-white/10">
@@ -42,7 +54,10 @@ export function Header({ searchQuery, onSearchChange }: HeaderProps) {
                             <Bell className="w-5 h-5 text-white/70" />
                             <span className="absolute top-1 right-1 w-2 h-2 bg-nippon-red rounded-full"></span>
                         </button>
-                        <button className="hidden sm:flex items-center gap-2 p-2 rounded-xl hover:bg-white/10 transition-colors">
+                        <button
+                            onClick={handleUserClick}
+                            className="hidden sm:flex items-center gap-2 p-2 rounded-xl hover:bg-white/10 transition-colors"
+                        >
                             <User className="w-5 h-5 text-white/70" />
                         </button>
                         <button
@@ -87,6 +102,17 @@ export function Header({ searchQuery, onSearchChange }: HeaderProps) {
                                     </a>
                                 </li>
                             ))}
+                            <li>
+                                <button
+                                    onClick={() => {
+                                        setIsMenuOpen(false);
+                                        handleUserClick();
+                                    }}
+                                    className="block w-full text-left px-4 py-3 rounded-xl hover:bg-white/10 transition-colors text-white/80 hover:text-white"
+                                >
+                                    Login / Admin
+                                </button>
+                            </li>
                         </ul>
                     </nav>
                 )}

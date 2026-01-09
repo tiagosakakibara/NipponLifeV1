@@ -1,28 +1,24 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { useAdminData } from '../data/useAdminData';
-import { Trash2, Image as ImageIcon } from 'lucide-react';
+import { Trash2, Image as ImageIcon, Loader } from 'lucide-react';
 
 export function AdminMedia() {
-    const { media, addMediaItem, deleteMediaItem } = useAdminData();
+    const { media, deleteMediaItem, uploadMedia } = useAdminData();
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [uploading, setUploading] = useState(false);
 
-    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            const base64String = reader.result as string;
-            addMediaItem({
-                id: Date.now().toString(),
-                url: base64String,
-                name: file.name,
-                type: file.type,
-                size: file.size,
-                createdAt: new Date().toISOString(),
-            });
-        };
-        reader.readAsDataURL(file);
+        setUploading(true);
+        try {
+            await uploadMedia(file);
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setUploading(false);
+        }
 
         // Clear input
         if (fileInputRef.current) fileInputRef.current.value = '';
@@ -56,9 +52,10 @@ export function AdminMedia() {
                     />
                     <button
                         onClick={() => fileInputRef.current?.click()}
-                        className="bg-[#2271b1] text-white px-4 py-2 rounded-md text-sm font-bold hover:bg-[#135e96] transition-colors shadow-sm"
+                        disabled={uploading}
+                        className="bg-[#2271b1] text-white px-4 py-2 rounded-md text-sm font-bold hover:bg-[#135e96] transition-colors shadow-sm disabled:opacity-50 flex items-center gap-2"
                     >
-                        Add New
+                        {uploading ? <Loader className="animate-spin w-4 h-4" /> : 'Add New'}
                     </button>
                 </div>
             </div>
