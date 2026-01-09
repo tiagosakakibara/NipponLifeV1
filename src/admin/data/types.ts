@@ -1,22 +1,20 @@
 export type PostStatus = 'draft' | 'published';
 
 export interface AdminCategory {
-    key: string;
-    label: string;
-    sort_order: number;
-    is_active: boolean;
-    icon?: string;
+    id?: string;
+    key: string; // slug
+    label: string; // name
+    // sort_order and is_active removed as per new schema
 }
 
 export interface AdminPost {
     id: string;
     title: string;
     slug: string;
-    categoryKey: string;
-    language: 'pt' | 'jp' | 'en';
+    categoryKey: string; // derived from category_id -> slug
     excerpt: string;
     content: string;
-    coverImageUrl?: string;
+    coverImageUrl?: string; // mapped from cover_image_url
     status: PostStatus;
     publishedAt?: string;
     createdAt: string;
@@ -31,9 +29,9 @@ export interface AdminSettings {
 
 export interface MediaItem {
     id: string;
-    url: string; // base64 or external url
-    name: string;
-    type: string;
-    size: number;
+    url: string; // public_url
+    name: string; // path or filename derived
+    type: string; // mime_type
+    size: number; // size_bytes
     createdAt: string;
 }

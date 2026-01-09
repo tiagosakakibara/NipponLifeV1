@@ -10,14 +10,13 @@ export function AdminPostNew() {
         title: '',
         slug: '',
         categoryKey: '',
-        language: 'pt',
         excerpt: '',
         content: '',
         status: 'draft',
         coverImageUrl: ''
     });
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!formData.title || !formData.slug || !formData.categoryKey) {
             alert('Por favor, preencha o título, slug e categoria.');
@@ -26,13 +25,13 @@ export function AdminPostNew() {
 
         const newPost: AdminPost = {
             ...formData as AdminPost,
-            id: Date.now().toString(),
+            id: Date.now().toString(), // Will be ignored/replaced by DB
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
             publishedAt: formData.status === 'published' ? new Date().toISOString() : undefined
         };
 
-        addPost(newPost);
+        await addPost(newPost);
         navigate('/admin/posts');
     };
 
@@ -105,18 +104,6 @@ export function AdminPostNew() {
                                 >
                                     <option value="draft">Draft</option>
                                     <option value="published">Published</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label className="font-bold block mb-1">Language</label>
-                                <select
-                                    value={formData.language}
-                                    onChange={e => setFormData({ ...formData, language: e.target.value as any })}
-                                    className="w-full border border-gray-200 p-1 bg-white text-zinc-900 outline-none focus:border-[#72aee6]"
-                                >
-                                    <option value="pt">Português (PT)</option>
-                                    <option value="jp">日本語 (JP)</option>
-                                    <option value="en">English (EN)</option>
                                 </select>
                             </div>
                         </div>

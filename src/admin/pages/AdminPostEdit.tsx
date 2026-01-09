@@ -2,21 +2,24 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAdminData } from '../data/useAdminData';
 import { AdminPost } from '../data/types';
+import { Loader } from 'lucide-react';
 
 export function AdminPostEdit() {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { categories, posts, updatePost } = useAdminData();
+    const { categories, posts, updatePost, loading: dataLoading } = useAdminData();
     const [formData, setFormData] = useState<AdminPost | null>(null);
 
     useEffect(() => {
-        const post = posts.find(p => p.id === id);
-        if (post) {
-            setFormData(post);
+        if (!dataLoading && posts.length > 0) {
+            const post = posts.find(p => p.id === id);
+            if (post) {
+                setFormData(post);
+            }
         }
-    }, [id, posts]);
+    }, [id, posts, dataLoading]);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!formData || !formData.title || !formData.slug || !formData.categoryKey) {
             alert('Por favor, preencha o título, slug e categoria.');
@@ -31,11 +34,19 @@ export function AdminPostEdit() {
                 : formData.publishedAt
         };
 
-        updatePost(id!, updatedPost);
+        await updatePost(id!, updatedPost);
         navigate('/admin/posts');
     };
 
-    if (!formData) return <div className="p-8">Loading post...</div>;
+    if (dataLoading) {
+        return (
+             <div className="min-h-screen flex items-center justify-center">
+                <Loader className="animate-spin text-gray-400" />
+            </div>
+        );
+    }
+
+    if (!formData) return <div className="p-8">Post not found.</div>;
 
     return (
         <div className="max-w-5xl mx-auto">
@@ -70,7 +81,7 @@ export function AdminPostEdit() {
                                 <label className="block text-[11px] font-bold text-gray-400 uppercase mb-1">Excerpt (Summary)</label>
                                 <textarea
                                     rows={3}
-                                    value={formData.excerpt}
+                                    value={formData.excerpt || ''}
                                     onChange={e => setFormData({ ...formData, excerpt: e.target.value })}
                                     className="w-full border border-gray-300 p-2 text-sm rounded outline-none bg-white text-zinc-900 focus:border-[#72aee6]"
                                 />
@@ -80,7 +91,7 @@ export function AdminPostEdit() {
                                 <label className="block text-[11px] font-bold text-gray-400 uppercase mb-1">Content (HTML allowed)</label>
                                 <textarea
                                     rows={15}
-                                    value={formData.content}
+                                    value={formData.content || ''}
                                     onChange={e => setFormData({ ...formData, content: e.target.value })}
                                     className="w-full border border-gray-300 p-2 text-sm rounded outline-none bg-white text-zinc-900 font-mono focus:border-[#72aee6]"
                                 />
@@ -106,18 +117,6 @@ export function AdminPostEdit() {
                                 >
                                     <option value="draft">Draft</option>
                                     <option value="published">Published</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label className="font-bold block mb-1">Language</label>
-                                <select
-                                    value={formData.language}
-                                    onChange={e => setFormData({ ...formData, language: e.target.value as any })}
-                                    className="w-full border border-gray-200 p-1 bg-white text-zinc-900 outline-none focus:border-[#72aee6]"
-                                >
-                                    <option value="pt">Português (PT)</option>
-                                    <option value="jp">日本語 (JP)</option>
-                                    <option value="en">English (EN)</option>
                                 </select>
                             </div>
                             <div className="pt-2">
@@ -177,7 +176,7 @@ export function AdminPostEdit() {
                             <input
                                 type="text"
                                 placeholder="Image URL"
-                                value={formData.coverImageUrl}
+                                value={formData.coverImageUrl || ''}
                                 onChange={e => setFormData({ ...formData, coverImageUrl: e.target.value })}
                                 className="w-full bg-white text-zinc-900 border border-zinc-300 p-2 text-xs rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-zinc-400"
                             />

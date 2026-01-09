@@ -17,22 +17,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [role, setRole] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
 
-    const fetchProfile = async (uid: string) => {
+    const fetchRole = async (uid: string) => {
         try {
+            // Check if user is in admins table
             const { data, error } = await supabase
-                .from('profiles')
-                .select('role')
-                .eq('id', uid)
+                .from('admins')
+                .select('user_id')
+                .eq('user_id', uid)
                 .single();
 
             if (error) {
-                console.error('Error fetching profile:', error.message);
+                // If error (likely row not found), not admin
                 setRole(null);
+            } else if (data) {
+                setRole('admin');
             } else {
-                setRole(data?.role || null);
+                setRole(null);
             }
         } catch (err) {
-            console.error('Unexpected error fetching profile:', err);
+            console.error('Unexpected error fetching role:', err);
             setRole(null);
         }
     };
@@ -42,7 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { data: { session: currentSession } } = await supabase.auth.getSession();
         setSession(currentSession);
         if (currentSession?.user) {
-            await fetchProfile(currentSession.user.id);
+            await fetchRole(currentSession.user.id);
         } else {
             setRole(null);
         }
@@ -57,7 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, currentSession) => {
             setSession(currentSession);
             if (currentSession?.user) {
-                await fetchProfile(currentSession.user.id);
+                await fetchRole(currentSession.user.id);
             } else {
                 setRole(null);
             }

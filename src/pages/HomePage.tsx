@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     Newspaper,
     Briefcase,
@@ -19,17 +19,87 @@ import {
     InfluencerCard,
     CommunityCard
 } from '../components';
+import { supabase } from '../lib/supabaseClient';
 import {
-    mockNews,
-    mockJobs,
-    mockEvents,
-    mockBusinesses,
-    mockInfluencers,
-    mockCommunities
-} from '../api';
+    NewsItem,
+    JobItem,
+    EventItem,
+    BusinessItem,
+    InfluencerItem,
+    CommunityItem
+} from '../api/types';
+
+// Helper to map DB post to UI types (simplified)
+const mapPostToItem = (post: any): any => ({
+    id: post.id,
+    title: post.title,
+    summary: post.excerpt || '',
+    description: post.excerpt || '',
+    image: post.cover_image_url || '',
+    category: post.categories?.name || 'Geral',
+    date: post.published_at || post.created_at,
+    company: 'Unknown',
+    location: 'Japan',
+    salary: 'N/A',
+    type: 'Full Time',
+    logo: post.cover_image_url || '',
+    time: 'N/A',
+    rating: 5.0,
+    reviews: 0,
+    name: post.title,
+    handle: '@unknown',
+    avatar: post.cover_image_url || '',
+    followers: '0',
+    members: 0,
+    verified: false,
+    featured: false
+});
 
 export function HomePage() {
     const [searchQuery, setSearchQuery] = useState('');
+    const [posts, setPosts] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchPosts = async () => {
+            setLoading(true);
+            const { data, error } = await supabase
+                .from('posts')
+                .select(`
+                    *,
+                    categories (name, slug)
+                `)
+                .eq('status', 'published')
+                .order('created_at', { ascending: false });
+
+            if (data) {
+                setPosts(data);
+            } else if (error) {
+                console.error('Error fetching posts:', error);
+            }
+            setLoading(false);
+        };
+
+        fetchPosts();
+    }, []);
+
+    // Filter posts by category slug and cast to specific type
+    const getPostsByCategory = <T,>(slug: string): T[] => {
+        return posts
+            .filter(p => p.categories?.slug === slug)
+            .map(mapPostToItem) as T[];
+    };
+
+    const newsItems = getPostsByCategory<NewsItem>('news');
+    const jobItems = getPostsByCategory<JobItem>('jobs');
+    const eventItems = getPostsByCategory<EventItem>('events');
+    const businessItems = getPostsByCategory<BusinessItem>('business');
+    const influencerItems = getPostsByCategory<InfluencerItem>('influencers');
+    const communityItems = getPostsByCategory<CommunityItem>('communities');
+
+    // For featured, just take the top 5 most recent across all categories
+    // Mapping to NewsItem as default for HeroSection
+    const featuredNews = posts.slice(0, 5).map(mapPostToItem) as NewsItem[];
 
     // Filter function for search
     const filterBySearch = <T extends { title?: string; name?: string; description?: string; summary?: string }>(
@@ -45,14 +115,20 @@ export function HomePage() {
         );
     };
 
-    const filteredNews = filterBySearch(mockNews);
-    const filteredJobs = filterBySearch(mockJobs);
-    const filteredEvents = filterBySearch(mockEvents);
-    const filteredBusinesses = filterBySearch(mockBusinesses);
-    const filteredInfluencers = filterBySearch(mockInfluencers);
-    const filteredCommunities = filterBySearch(mockCommunities);
+    const filteredNews = filterBySearch(newsItems);
+    const filteredJobs = filterBySearch(jobItems);
+    const filteredEvents = filterBySearch(eventItems);
+    const filteredBusinesses = filterBySearch(businessItems);
+    const filteredInfluencers = filterBySearch(influencerItems);
+    const filteredCommunities = filterBySearch(communityItems);
 
-    const featuredNews = mockNews.filter(n => n.featured);
+    if (loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-[#1a1a1a]">
+                <div className="text-white">Loading...</div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen">
