@@ -30,30 +30,36 @@ import {
 } from '../api/types';
 
 // Helper to map DB post to UI types (simplified)
-const mapPostToItem = (post: any): any => ({
-    id: post.id,
-    title: post.title,
-    summary: post.excerpt || '',
-    description: post.excerpt || '',
-    image: post.cover_image_url || '',
-    category: post.categories?.name || 'Geral',
-    date: post.published_at || post.created_at,
-    company: 'Unknown',
-    location: 'Japan',
-    salary: 'N/A',
-    type: 'Full Time',
-    logo: post.cover_image_url || '',
-    time: 'N/A',
-    rating: 5.0,
-    reviews: 0,
-    name: post.title,
-    handle: '@unknown',
-    avatar: post.cover_image_url || '',
-    followers: '0',
-    members: 0,
-    verified: false,
-    featured: false
-});
+const mapPostToItem = (post: any): any => {
+    // Handle categories whether it's an object or array (Supabase quirks)
+    const categoryData = Array.isArray(post.categories) ? post.categories[0] : post.categories;
+    const categoryName = categoryData?.name || 'Geral';
+
+    return {
+        id: post.id,
+        title: post.title,
+        summary: post.excerpt || '',
+        description: post.excerpt || '',
+        image: post.cover_image_url || '',
+        category: categoryName,
+        date: post.published_at || post.created_at,
+        company: 'Unknown',
+        location: 'Japan',
+        salary: 'N/A',
+        type: 'Full Time',
+        logo: post.cover_image_url || '',
+        time: 'N/A',
+        rating: 5.0,
+        reviews: 0,
+        name: post.title,
+        handle: '@unknown',
+        avatar: post.cover_image_url || '',
+        followers: '0',
+        members: 0,
+        verified: false,
+        featured: false
+    };
+};
 
 export function HomePage() {
     const [searchQuery, setSearchQuery] = useState('');
@@ -63,6 +69,7 @@ export function HomePage() {
     useEffect(() => {
         const fetchPosts = async () => {
             setLoading(true);
+            console.log('Fetching posts...');
             const { data, error } = await supabase
                 .from('posts')
                 .select(`
@@ -73,6 +80,10 @@ export function HomePage() {
                 .order('created_at', { ascending: false });
 
             if (data) {
+                console.log('Posts fetched:', data.length);
+                if (data.length > 0) {
+                    console.log('Sample post categories:', data[0].categories);
+                }
                 setPosts(data);
             } else if (error) {
                 console.error('Error fetching posts:', error);
@@ -86,7 +97,10 @@ export function HomePage() {
     // Filter posts by category slug and cast to specific type
     const getPostsByCategory = <T,>(slug: string): T[] => {
         return posts
-            .filter(p => p.categories?.slug === slug)
+            .filter(p => {
+                const categoryData = Array.isArray(p.categories) ? p.categories[0] : p.categories;
+                return categoryData?.slug === slug;
+            })
             .map(mapPostToItem) as T[];
     };
 
@@ -144,9 +158,13 @@ export function HomePage() {
                     icon={<Newspaper className="w-5 h-5" />}
                     sectionId="news"
                 >
-                    {filteredNews.map(item => (
-                        <NewsCard key={item.id} item={item} featured={item.featured} />
-                    ))}
+                    {filteredNews.length > 0 ? (
+                        filteredNews.map(item => (
+                            <NewsCard key={item.id} item={item} featured={item.featured} />
+                        ))
+                    ) : (
+                        <div className="text-gray-400 text-sm py-4 px-2">Nenhuma notícia encontrada.</div>
+                    )}
                 </Carousel>
 
                 {/* Jobs Section */}
@@ -155,9 +173,13 @@ export function HomePage() {
                     icon={<Briefcase className="w-5 h-5" />}
                     sectionId="jobs"
                 >
-                    {filteredJobs.map(item => (
-                        <JobCard key={item.id} item={item} featured={item.featured} />
-                    ))}
+                    {filteredJobs.length > 0 ? (
+                        filteredJobs.map(item => (
+                            <JobCard key={item.id} item={item} featured={item.featured} />
+                        ))
+                    ) : (
+                        <div className="text-gray-400 text-sm py-4 px-2">Nenhuma vaga encontrada.</div>
+                    )}
                 </Carousel>
 
                 {/* Events Section */}
@@ -166,9 +188,13 @@ export function HomePage() {
                     icon={<Calendar className="w-5 h-5" />}
                     sectionId="events"
                 >
-                    {filteredEvents.map(item => (
-                        <EventCard key={item.id} item={item} featured={item.featured} />
-                    ))}
+                    {filteredEvents.length > 0 ? (
+                        filteredEvents.map(item => (
+                            <EventCard key={item.id} item={item} featured={item.featured} />
+                        ))
+                    ) : (
+                        <div className="text-gray-400 text-sm py-4 px-2">Nenhum evento encontrado.</div>
+                    )}
                 </Carousel>
 
                 {/* Business Section */}
@@ -177,9 +203,13 @@ export function HomePage() {
                     icon={<Building2 className="w-5 h-5" />}
                     sectionId="business"
                 >
-                    {filteredBusinesses.map(item => (
-                        <BusinessCard key={item.id} item={item} featured={item.featured} />
-                    ))}
+                    {filteredBusinesses.length > 0 ? (
+                        filteredBusinesses.map(item => (
+                            <BusinessCard key={item.id} item={item} featured={item.featured} />
+                        ))
+                    ) : (
+                        <div className="text-gray-400 text-sm py-4 px-2">Nenhum negócio encontrado.</div>
+                    )}
                 </Carousel>
 
                 {/* Influencers Section */}
@@ -188,9 +218,13 @@ export function HomePage() {
                     icon={<Heart className="w-5 h-5" />}
                     sectionId="influencers"
                 >
-                    {filteredInfluencers.map(item => (
-                        <InfluencerCard key={item.id} item={item} featured={item.featured} />
-                    ))}
+                    {filteredInfluencers.length > 0 ? (
+                        filteredInfluencers.map(item => (
+                            <InfluencerCard key={item.id} item={item} featured={item.featured} />
+                        ))
+                    ) : (
+                        <div className="text-gray-400 text-sm py-4 px-2">Nenhum influenciador encontrado.</div>
+                    )}
                 </Carousel>
 
                 {/* Community Section */}
@@ -199,9 +233,13 @@ export function HomePage() {
                     icon={<Users className="w-5 h-5" />}
                     sectionId="community"
                 >
-                    {filteredCommunities.map(item => (
-                        <CommunityCard key={item.id} item={item} featured={item.featured} />
-                    ))}
+                    {filteredCommunities.length > 0 ? (
+                        filteredCommunities.map(item => (
+                            <CommunityCard key={item.id} item={item} featured={item.featured} />
+                        ))
+                    ) : (
+                        <div className="text-gray-400 text-sm py-4 px-2">Nenhuma comunidade encontrada.</div>
+                    )}
                 </Carousel>
             </main>
 
