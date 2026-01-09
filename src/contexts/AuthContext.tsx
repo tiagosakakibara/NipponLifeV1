@@ -19,6 +19,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const fetchRole = async (uid: string) => {
         try {
+            console.log('Fetching role for user:', uid);
             // Check if user is in admins table
             const { data, error } = await supabase
                 .from('admins')
@@ -28,8 +29,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
             if (error) {
                 // If error (likely row not found), not admin
+                console.warn('Error fetching admin role:', error.message);
                 setRole(null);
             } else if (data) {
+                console.log('User is admin:', uid);
                 setRole('admin');
             } else {
                 setRole(null);
@@ -41,15 +44,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     const refresh = async () => {
-        setLoading(true);
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
-        setSession(currentSession);
-        if (currentSession?.user) {
-            await fetchRole(currentSession.user.id);
-        } else {
-            setRole(null);
+        try {
+            setLoading(true);
+            const { data: { session: currentSession } } = await supabase.auth.getSession();
+            setSession(currentSession);
+            if (currentSession?.user) {
+                await fetchRole(currentSession.user.id);
+            } else {
+                setRole(null);
+            }
+        } catch (error) {
+            console.error('Error refreshing session:', error);
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
     };
 
     useEffect(() => {
@@ -58,13 +66,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         // Listen for auth changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, currentSession) => {
-            setSession(currentSession);
-            if (currentSession?.user) {
-                await fetchRole(currentSession.user.id);
-            } else {
-                setRole(null);
+            setLoading(true);
+            try {
+                setSession(currentSession);
+                if (currentSession?.user) {
+                    await fetchRole(currentSession.user.id);
+                } else {
+                    setRole(null);
+                }
+            } finally {
+                setLoading(false);
             }
-            setLoading(false);
         });
 
         return () => {
