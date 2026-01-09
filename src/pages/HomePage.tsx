@@ -34,6 +34,7 @@ const mapPostToItem = (post: any): any => {
     // Handle categories whether it's an object or array (Supabase quirks)
     const categoryData = Array.isArray(post.categories) ? post.categories[0] : post.categories;
     const categoryName = categoryData?.name || 'Geral';
+    const categorySlug = categoryData?.slug || 'geral';
 
     return {
         id: post.id,
@@ -42,6 +43,7 @@ const mapPostToItem = (post: any): any => {
         description: post.excerpt || '',
         image: post.cover_image_url || '',
         category: categoryName,
+        categorySlug: categorySlug, // internal use for filtering
         date: post.published_at || post.created_at,
         company: 'Unknown',
         location: 'Japan',
@@ -69,7 +71,8 @@ export function HomePage() {
     useEffect(() => {
         const fetchPosts = async () => {
             setLoading(true);
-            console.log('Fetching posts...');
+            console.group('HomePage Post Fetching');
+            console.log('Fetching posts from Supabase...');
             const { data, error } = await supabase
                 .from('posts')
                 .select(`
@@ -79,15 +82,20 @@ export function HomePage() {
                 .eq('status', 'published')
                 .order('created_at', { ascending: false });
 
-            if (data) {
-                console.log('Posts fetched:', data.length);
-                if (data.length > 0) {
-                    console.log('Sample post categories:', data[0].categories);
-                }
-                setPosts(data);
-            } else if (error) {
+            if (error) {
                 console.error('Error fetching posts:', error);
+            } else {
+                console.log('Posts fetched successfully:', data?.length);
+                if (data && data.length > 0) {
+                    console.log('Sample raw post:', data[0]);
+                    const sampleMapped = mapPostToItem(data[0]);
+                    console.log('Sample mapped item:', sampleMapped);
+                } else {
+                    console.warn('No published posts found.');
+                }
+                setPosts(data || []);
             }
+            console.groupEnd();
             setLoading(false);
         };
 
@@ -96,10 +104,20 @@ export function HomePage() {
 
     // Filter posts by category slug and cast to specific type
     const getPostsByCategory = <T,>(slug: string): T[] => {
+        // We use the raw post's category data for filtering logic
+        // But since we are mapping later, we can also map first then filter.
+        // However, the helper function uses `posts` (which are raw db objects).
+
         return posts
             .filter(p => {
                 const categoryData = Array.isArray(p.categories) ? p.categories[0] : p.categories;
-                return categoryData?.slug === slug;
+                // If categories is null/undefined, categoryData might be null
+                // We must handle that.
+                if (!categoryData) {
+                    // console.warn('Post has no category:', p.id);
+                    return false;
+                }
+                return categoryData.slug === slug;
             })
             .map(mapPostToItem) as T[];
     };
@@ -110,6 +128,20 @@ export function HomePage() {
     const businessItems = getPostsByCategory<BusinessItem>('business');
     const influencerItems = getPostsByCategory<InfluencerItem>('influencers');
     const communityItems = getPostsByCategory<CommunityItem>('communities');
+
+    // Debug logs for categories
+    useEffect(() => {
+        if (!loading && posts.length > 0) {
+            console.group('Homepage Category Counts');
+            console.log('News:', newsItems.length);
+            console.log('Jobs:', jobItems.length);
+            console.log('Events:', eventItems.length);
+            console.log('Business:', businessItems.length);
+            console.log('Influencers:', influencerItems.length);
+            console.log('Communities:', communityItems.length);
+            console.groupEnd();
+        }
+    }, [loading, posts]);
 
     // For featured, just take the top 5 most recent across all categories
     // Mapping to NewsItem as default for HeroSection
