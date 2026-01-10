@@ -145,8 +145,8 @@ export function HomePage() {
                 // If categories is null/undefined, categoryData might be null
                 // We must handle that.
                 if (!categoryData) {
-                    // console.warn('Post has no category:', p.id);
-                    return false;
+                    // If no category, treat as 'news' (default)
+                    return slug === 'news';
                 }
                 return categoryData.slug === slug;
             })
