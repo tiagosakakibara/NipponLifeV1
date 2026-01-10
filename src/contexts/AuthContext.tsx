@@ -26,11 +26,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 .eq('id', userId)
                 .maybeSingle(); // Better than .single() if it might not exist
 
+            console.log('Role fetched result:', { data, error });
             if (error) {
                 console.error('Error fetching role:', error);
                 setRole(null);
             } else {
-                setRole(data?.role || 'editor');
+                const finalRole = data?.role || 'editor';
+                console.log('Setting user role to:', finalRole);
+                setRole(finalRole);
             }
         } catch (err) {
             console.error('Catch error fetching role:', err);
@@ -47,8 +50,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setSession(currentSession);
 
             if (currentSession?.user?.id) {
-                // DON'T await fetchRole here, it will run in background
-                fetchRole(currentSession.user.id);
+                console.log('Waiting for user role with 3s timeout...');
+                // Await role fetch, but don't let it hang the app forever
+                await Promise.race([
+                    fetchRole(currentSession.user.id),
+                    new Promise((resolve) => setTimeout(() => {
+                        console.warn('Role fetch timed out after 3s');
+                        resolve(null);
+                    }, 3000))
+                ]);
             }
         } catch (error) {
             console.error('Auth initialization error:', error);
