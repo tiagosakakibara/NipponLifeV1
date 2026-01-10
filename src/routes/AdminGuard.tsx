@@ -2,26 +2,28 @@ import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 export function AdminGuard() {
-    const { session, loading } = useAuth();
+    const { session, role, loading } = useAuth();
     const user = session?.user;
 
     // Enhanced logging for debugging in production
     if (!loading) {
         console.group('AdminGuard Debug');
         console.log('Session User:', user);
-        console.log('User Email:', user?.email);
+        console.log('User Role from Context:', role);
 
         const rawEnv = import.meta.env.VITE_ADMIN_EMAILS || '';
-        console.log('VITE_ADMIN_EMAILS (raw):', rawEnv);
-
         const adminEmails = rawEnv
             .split(',')
             .map((e: string) => e.trim().toLowerCase());
-        console.log('Allowed Admin Emails (parsed):', adminEmails);
 
         const userEmail = user?.email?.toLowerCase();
-        const isAllowed = userEmail && adminEmails.includes(userEmail);
-        console.log('Authorization Decision:', isAllowed ? 'ALLOWED' : 'DENIED');
+        const isEmailAllowed = userEmail && adminEmails.includes(userEmail);
+        const isRoleAllowed = role === 'admin';
+        const isAllowed = isEmailAllowed || isRoleAllowed;
+
+        console.log('Is Email Allowed (ENV):', isEmailAllowed);
+        console.log('Is Role Allowed (DB):', isRoleAllowed);
+        console.log('Final Decision:', isAllowed ? 'ALLOWED' : 'DENIED');
         console.groupEnd();
     }
 
@@ -37,12 +39,13 @@ export function AdminGuard() {
         return <Navigate to="/admin/login" replace />;
     }
 
-    const adminEmails = (import.meta.env.VITE_ADMIN_EMAILS || '')
+    const rawEnv = import.meta.env.VITE_ADMIN_EMAILS || '';
+    const adminEmails = rawEnv
         .split(',')
         .map((e: string) => e.trim().toLowerCase());
 
     const userEmail = user.email?.toLowerCase();
-    const isAllowed = userEmail && adminEmails.includes(userEmail);
+    const isAllowed = (userEmail && adminEmails.includes(userEmail)) || role === 'admin';
 
     if (isAllowed) {
         return <Outlet />;

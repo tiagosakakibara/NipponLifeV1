@@ -63,44 +63,75 @@ const mapPostToItem = (post: any): any => {
     };
 };
 
+import { useAuth } from '../contexts/AuthContext';
+
 export function HomePage() {
+    const { loading: authLoading } = useAuth();
     const [searchQuery, setSearchQuery] = useState('');
     const [posts, setPosts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchPosts = async () => {
-            setLoading(true);
-            console.group('HomePage Post Fetching');
-            console.log('Fetching posts from Supabase...');
-            const { data, error } = await supabase
-                .from('posts')
-                .select(`
-                    *,
-                    categories (name, slug)
-                `)
-                .eq('status', 'published')
-                .order('created_at', { ascending: false });
-
-            if (error) {
-                console.error('Error fetching posts:', error);
-            } else {
-                console.log('Posts fetched successfully:', data?.length);
-                if (data && data.length > 0) {
-                    console.log('Sample raw post:', data[0]);
-                    const sampleMapped = mapPostToItem(data[0]);
-                    console.log('Sample mapped item:', sampleMapped);
-                } else {
-                    console.warn('No published posts found.');
-                }
-                setPosts(data || []);
+            if (authLoading) {
+                console.log('--- fetchPosts WAITING for Auth ---');
+                return;
             }
-            console.groupEnd();
-            setLoading(false);
+
+            console.log('--- fetchPosts START ---');
+            try {
+                setLoading(true);
+
+                // TEST: Try a direct fetch to verify network connectivity
+                console.log('Testing connectivity to Supabase URL...');
+                try {
+                    const testResp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/posts?select=count`, {
+                        headers: { 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY }
+                    });
+                    console.log('Network Test Result:', testResp.status, testResp.statusText);
+                } catch (netErr) {
+                    console.error('Network Test FAILED:', netErr);
+                }
+
+                console.log('Fetching posts from Supabase table: posts');
+                const { data, error } = await supabase
+                    .from('posts')
+                    .select('id, title, status, created_at')
+                    .eq('status', 'published')
+                    .limit(5); // Just 5 to be fast
+
+                if (error) {
+                    console.error('Supabase error fetching posts:', error);
+                    return;
+                }
+
+                console.log('Basic fetch success, found:', data?.length);
+
+                const { data: fullData, error: fullError } = await supabase
+                    .from('posts')
+                    .select(`
+                        *,
+                        categories (name, slug)
+                    `)
+                    .eq('status', 'published')
+                    .order('created_at', { ascending: false });
+
+                if (fullError) {
+                    console.error('Error fetching full post data:', fullError);
+                } else {
+                    console.log('Full fetch success:', fullData?.length);
+                    setPosts(fullData || []);
+                }
+            } catch (err) {
+                console.error('Fatal error in fetchPosts:', err);
+            } finally {
+                console.log('--- fetchPosts END ---');
+                setLoading(false);
+            }
         };
 
         fetchPosts();
-    }, []);
+    }, [authLoading]);
 
     // Filter posts by category slug and cast to specific type
     const getPostsByCategory = <T,>(slug: string): T[] => {
@@ -167,6 +198,17 @@ export function HomePage() {
     const filteredBusinesses = filterBySearch(businessItems);
     const filteredInfluencers = filterBySearch(influencerItems);
     const filteredCommunities = filterBySearch(communityItems);
+
+    // Safety fallback: If it's still loading after 5 seconds, force it to false
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (loading) {
+                console.warn('Safety timeout: Force-setting loading to false after 5 seconds.');
+                setLoading(false);
+            }
+        }, 5000);
+        return () => clearTimeout(timer);
+    }, [loading]);
 
     if (loading) {
         return (
